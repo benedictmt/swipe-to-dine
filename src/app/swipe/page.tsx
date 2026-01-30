@@ -83,6 +83,9 @@ export default function SwipePage() {
   const canViewShortlist = isSingleDiner && swipeCount >= MIN_SWIPES_FOR_SHORTLIST;
   const maybeCount = getRestaurantsWithMaybeVotes().length;
 
+  // Browse-only mode: single diner with "Just Browsing" profile (no match detection)
+  const isBrowseOnly = isSingleDiner && selectedProfiles[0]?.name === 'Just Browsing';
+
   // Load restaurants on mount
   useEffect(() => {
     if (!party) {
@@ -156,16 +159,18 @@ export default function SwipePage() {
       // Record the vote
       vote(votingDinerId, currentRestaurant.id, status);
 
-      // Check for match
-      const isMatch = checkForMatch(currentRestaurant.id);
-      if (isMatch) {
-        setMatch(currentRestaurant.id);
-        setShowConfetti(true);
-        setPhase('matched');
-        setTimeout(() => {
-          router.push('/match');
-        }, 2000);
-        return;
+      // Check for match (skip in browse-only mode - just building a list)
+      if (!isBrowseOnly) {
+        const isMatch = checkForMatch(currentRestaurant.id);
+        if (isMatch) {
+          setMatch(currentRestaurant.id);
+          setShowConfetti(true);
+          setPhase('matched');
+          setTimeout(() => {
+            router.push('/match');
+          }, 2000);
+          return;
+        }
       }
 
       // Handle on-deck turn progression
@@ -187,7 +192,7 @@ export default function SwipePage() {
         setCurrentCardKey((k) => k + 1);
       }
     },
-    [currentRestaurant, party, onDeckDiners, currentOnDeckDiner, currentVotes]
+    [currentRestaurant, party, onDeckDiners, currentOnDeckDiner, currentVotes, isBrowseOnly]
   );
 
   const handleSwipeLeft = () => handleVote('no');

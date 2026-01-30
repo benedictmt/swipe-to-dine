@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 import Image from 'next/image';
 import { Logo } from '@/components/common/Logo';
 import { usePartyStore } from '@/stores';
@@ -30,9 +30,18 @@ export default function InstructionsPage() {
     router.push('/swipe');
   };
 
-  // Handle tap/swipe anywhere to continue
+  // Handle tap anywhere to continue
   const handleInteraction = () => {
     handleContinue();
+  };
+
+  // Handle swipe gesture to continue
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const swipeThreshold = 50;
+    // Swipe in either direction advances
+    if (Math.abs(info.offset.x) > swipeThreshold) {
+      handleContinue();
+    }
   };
 
   if (!party) {
@@ -41,8 +50,12 @@ export default function InstructionsPage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-8 cursor-pointer"
+      className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-8 cursor-pointer touch-pan-y"
       onClick={handleInteraction}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.3}
+      onDragEnd={handleDragEnd}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -155,7 +168,7 @@ export default function InstructionsPage() {
         className="absolute bottom-12 animate-pulse"
       >
         <p className="text-gray-400 dark:text-gray-600 text-sm">
-          Tap anywhere to continue
+          Tap or swipe to continue
         </p>
       </motion.div>
 

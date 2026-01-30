@@ -301,12 +301,14 @@ export default function GroupPage() {
           >
             Swipe to Dine
           </Button>
-          <button
+          <Button
             onClick={handleBrowseOnly}
-            className="w-full py-2 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+            variant="secondary"
+            fullWidth
+            size="lg"
           >
-            Just browsing? Build a list to review later
-          </button>
+            Just Browsing
+          </Button>
         </div>
       </div>
 

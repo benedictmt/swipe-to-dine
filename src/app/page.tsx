@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Logo } from '@/components/common/Logo';
 import { Button, Slider, Chip, Toggle, Input } from '@/components/ui';
 import { useFilterStore, useLocationStore, usePartyStore } from '@/stores';
@@ -27,6 +28,7 @@ export default function FiltersPage() {
 
   const [manualCity, setManualCity] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
+  const [hasCustomLogo, setHasCustomLogo] = useState(true);
 
   // Request geolocation on mount
   useEffect(() => {
@@ -60,7 +62,20 @@ export default function FiltersPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-center">
-          <Logo size="md" animate />
+          {hasCustomLogo ? (
+            <div className="relative w-12 h-12">
+              <Image
+                src="/logo.png"
+                alt="Swipe to Dine"
+                fill
+                className="object-contain"
+                onError={() => setHasCustomLogo(false)}
+                priority
+              />
+            </div>
+          ) : (
+            <Logo size="md" animate />
+          )}
         </div>
       </header>
 
@@ -78,10 +93,10 @@ export default function FiltersPage() {
             Set your filters to find the perfect restaurant
           </p>
 
-          {/* Location */}
+          {/* Current Location */}
           <section className="mb-8">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-              Location
+              Current Location
             </h2>
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
               {isLoading ? (
@@ -158,23 +173,6 @@ export default function FiltersPage() {
             </div>
           </section>
 
-          {/* Rating */}
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-              Minimum Rating
-            </h2>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-              <Slider
-                value={filters.minRating}
-                onChange={setMinRating}
-                min={1}
-                max={5}
-                step={0.1}
-                valueLabel={(v) => `${v.toFixed(1)} ★`}
-              />
-            </div>
-          </section>
-
           {/* Distance */}
           <section className="mb-8">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
@@ -188,6 +186,23 @@ export default function FiltersPage() {
                 max={25}
                 step={1}
                 valueLabel={(v) => `${v} miles`}
+              />
+            </div>
+          </section>
+
+          {/* Rating */}
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
+              Minimum Rating
+            </h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+              <Slider
+                value={filters.minRating}
+                onChange={setMinRating}
+                min={1}
+                max={5}
+                step={0.1}
+                valueLabel={(v) => `${v.toFixed(1)} ★`}
               />
             </div>
           </section>
