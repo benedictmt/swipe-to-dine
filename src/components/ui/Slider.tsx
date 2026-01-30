@@ -87,6 +87,10 @@ export function Slider({
     };
   }, [isDragging]);
 
+  // Calculate thumb position accounting for thumb width (24px = 1.5rem)
+  // This prevents the thumb from being cut off at edges
+  const thumbOffset = 12; // half of thumb width in pixels
+
   return (
     <div className={`w-full ${className}`}>
       {(label || valueLabel) && (
@@ -103,32 +107,35 @@ export function Slider({
           )}
         </div>
       )}
-      <div
-        ref={sliderRef}
-        className="relative h-6 flex items-center cursor-pointer touch-none select-none"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-      >
-        {/* Track background */}
-        <div className="absolute w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full" />
-
-        {/* Filled track */}
+      {/* Outer container with padding to prevent thumb cutoff */}
+      <div className="px-3">
         <div
-          className="absolute h-2 bg-gradient-to-r from-rose-400 to-rose-500 rounded-full"
-          style={{ width: `${percentage}%` }}
-        />
+          ref={sliderRef}
+          className="relative h-6 flex items-center cursor-pointer touch-none select-none"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          {/* Track background */}
+          <div className="absolute w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full" />
 
-        {/* Thumb */}
-        <div
-          className={`
-            absolute w-6 h-6 bg-white rounded-full shadow-lg
-            border-2 border-rose-500
-            transform -translate-x-1/2
-            transition-transform duration-100
-            ${isDragging ? 'scale-110' : ''}
-          `}
-          style={{ left: `${percentage}%` }}
-        />
+          {/* Filled track */}
+          <div
+            className="absolute h-2 bg-gradient-to-r from-rose-400 to-rose-500 rounded-full"
+            style={{ width: `${percentage}%` }}
+          />
+
+          {/* Thumb */}
+          <div
+            className={`
+              absolute w-6 h-6 bg-white rounded-full shadow-lg
+              border-2 border-rose-500
+              transform -translate-x-1/2
+              transition-transform duration-100
+              ${isDragging ? 'scale-110' : ''}
+            `}
+            style={{ left: `${percentage}%` }}
+          />
+        </div>
       </div>
     </div>
   );

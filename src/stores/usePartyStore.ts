@@ -5,7 +5,7 @@
  * - Selected diners and their attendance modes
  * - Votes for each restaurant
  * - Match detection
- * - On-Deck turn-taking flow
+ * - In-Person pass-the-phone flow (one person swipes all 10, then next)
  *
  * TODO: Replace with real-time backend
  * Options for real-time sync:
@@ -45,7 +45,7 @@ interface PartyStoreState {
   removeDiner: (profileId: string) => void;
   setDinerMode: (profileId: string, mode: AttendanceMode) => void;
   isDinerSelected: (profileId: string) => boolean;
-  getOnDeckDiners: () => DinerSelection[];
+  getInPersonDiners: () => DinerSelection[];
   getRemoteDiners: () => DinerSelection[];
 
   // Date/time
@@ -62,11 +62,11 @@ interface PartyStoreState {
   getAllVotesForRestaurant: (restaurantId: string) => Record<string, VoteStatus>;
   checkForMatch: (restaurantId: string) => boolean;
 
-  // On-Deck flow
-  getCurrentOnDeckDiner: () => DinerSelection | null;
-  advanceOnDeckTurn: () => boolean; // Returns true if all on-deck have voted
-  resetOnDeckForRestaurant: () => void;
-  hasAllOnDeckVoted: (restaurantId: string) => boolean;
+  // In-Person flow (one person swipes all restaurants, then passes to next)
+  getCurrentInPersonDiner: () => DinerSelection | null;
+  advanceToNextInPersonDiner: () => boolean; // Returns true if all in-person diners are done
+  resetInPersonFlow: () => void;
+  hasCurrentInPersonDinerFinishedRound: (roundSize: number) => boolean;
 
   // Match
   setMatch: (restaurantId: string) => void;
@@ -74,6 +74,8 @@ interface PartyStoreState {
 
   // Utility
   getRestaurantsWithMaybeVotes: () => Restaurant[];
+  getRestaurantsWithUnanimousMaybes: () => Restaurant[];
+  clearVotesForRestaurant: (restaurantId: string) => void;
 }
 
 // Storage key prefix for parties
@@ -100,7 +102,8 @@ export const usePartyStore = create<PartyStoreState>()(
           matchedRestaurantId: null,
           matchedAt: null,
           currentRestaurantIndex: 0,
-          currentOnDeckDinerIndex: 0,
+          currentInPersonDinerIndex: 0,
+          inPersonDinerStartIndex: 0,
           createdAt: now,
           updatedAt: now,
         };
@@ -213,9 +216,9 @@ export const usePartyStore = create<PartyStoreState>()(
         return party?.selectedDiners.some((d) => d.profileId === profileId) || false;
       },
 
-      getOnDeckDiners: () => {
+      getInPersonDiners: () => {
         const { party } = get();
-        return party?.selectedDiners.filter((d) => d.mode === 'onDeck') || [];
+        return party?.selectedDiners.filter((d) => d.mode === 'inPerson') || [];
       },
 
       getRemoteDiners: () => {
@@ -262,7 +265,7 @@ export const usePartyStore = create<PartyStoreState>()(
           const updatedParty = {
             ...state.party,
             currentRestaurantIndex: nextIndex,
-            currentOnDeckDinerIndex: 0, // Reset on-deck turn
+            // Don't reset in-person diner index - one person swipes all restaurants in their turn
             seenRestaurantIds: currentRestaurant
               ? [...state.party.seenRestaurantIds, currentRestaurant.id]
               : state.party.seenRestaurantIds,
@@ -336,25 +339,25 @@ export const usePartyStore = create<PartyStoreState>()(
         return allDiners.length > 0;
       },
 
-      getCurrentOnDeckDiner: () => {
+      getCurrentInPersonDiner: () => {
         const { party } = get();
         if (!party) return null;
 
-        const onDeckDiners = party.selectedDiners.filter((d) => d.mode === 'onDeck');
-        return onDeckDiners[party.currentOnDeckDinerIndex] || null;
+        const inPersonDiners = party.selectedDiners.filter((d) => d.mode === 'inPerson');
+        return inPersonDiners[party.currentInPersonDinerIndex] || null;
       },
 
-      advanceOnDeckTurn: () => {
+      advanceToNextInPersonDiner: () => {
         const state = get();
         if (!state.party) return true;
 
-        const onDeckDiners = state.party.selectedDiners.filter(
-          (d) => d.mode === 'onDeck'
+        const inPersonDiners = state.party.selectedDiners.filter(
+          (d) => d.mode === 'inPerson'
         );
-        const nextIndex = state.party.currentOnDeckDinerIndex + 1;
+        const nextIndex = state.party.currentInPersonDinerIndex + 1;
 
-        if (nextIndex >= onDeckDiners.length) {
-          // All on-deck diners have voted
+        if (nextIndex >= inPersonDiners.length) {
+          // All in-person diners have completed their turns
           return true;
         }
 
@@ -363,7 +366,8 @@ export const usePartyStore = create<PartyStoreState>()(
 
           const updatedParty = {
             ...s.party,
-            currentOnDeckDinerIndex: nextIndex,
+            currentInPersonDinerIndex: nextIndex,
+            inPersonDinerStartIndex: s.party.currentRestaurantIndex,
             updatedAt: Date.now(),
           };
 
@@ -380,13 +384,14 @@ export const usePartyStore = create<PartyStoreState>()(
         return false;
       },
 
-      resetOnDeckForRestaurant: () => {
+      resetInPersonFlow: () => {
         set((state) => {
           if (!state.party) return state;
 
           const updatedParty = {
             ...state.party,
-            currentOnDeckDinerIndex: 0,
+            currentInPersonDinerIndex: 0,
+            inPersonDinerStartIndex: state.party.currentRestaurantIndex,
             updatedAt: Date.now(),
           };
 
@@ -401,20 +406,13 @@ export const usePartyStore = create<PartyStoreState>()(
         });
       },
 
-      hasAllOnDeckVoted: (restaurantId) => {
+      hasCurrentInPersonDinerFinishedRound: (roundSize: number) => {
         const { party } = get();
         if (!party) return true;
 
-        const onDeckDiners = party.selectedDiners.filter((d) => d.mode === 'onDeck');
-        const votes = party.votes[restaurantId] || {};
-
-        for (const diner of onDeckDiners) {
-          if (!votes[diner.profileId] || votes[diner.profileId] === 'unknown') {
-            return false;
-          }
-        }
-
-        return true;
+        // Check if current diner has swiped roundSize restaurants since their start
+        const swipedInThisTurn = party.currentRestaurantIndex - party.inPersonDinerStartIndex;
+        return swipedInThisTurn >= roundSize;
       },
 
       setMatch: (restaurantId) => {
@@ -455,6 +453,48 @@ export const usePartyStore = create<PartyStoreState>()(
 
           // At least one 'maybe' vote
           return Object.values(votes).some((v) => v === 'maybe');
+        });
+      },
+
+      getRestaurantsWithUnanimousMaybes: () => {
+        const { party, restaurants } = get();
+        if (!party) return [];
+
+        return restaurants.filter((restaurant) => {
+          const votes = party.votes[restaurant.id];
+          if (!votes) return false;
+
+          // All diners must have voted 'maybe'
+          for (const diner of party.selectedDiners) {
+            if (votes[diner.profileId] !== 'maybe') {
+              return false;
+            }
+          }
+          return true;
+        });
+      },
+
+      clearVotesForRestaurant: (restaurantId) => {
+        set((state) => {
+          if (!state.party) return state;
+
+          const updatedVotes = { ...state.party.votes };
+          delete updatedVotes[restaurantId];
+
+          const updatedParty = {
+            ...state.party,
+            votes: updatedVotes,
+            updatedAt: Date.now(),
+          };
+
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(
+              `${PARTY_STORAGE_KEY}${state.party.inviteId}`,
+              JSON.stringify(updatedParty)
+            );
+          }
+
+          return { party: updatedParty };
         });
       },
     }),

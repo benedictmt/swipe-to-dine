@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Overlay shown during On-Deck pass-the-phone flow
+ * Overlay shown during In-Person pass-the-phone flow
+ * Shows whose turn it is and requires them to tap Ready
  */
 
 import { motion } from 'framer-motion';
@@ -48,18 +49,21 @@ export function OnDeckOverlay({ profile, onReady }: OnDeckOverlayProps) {
           transition={{ delay: 0.3 }}
         >
           <p className="text-gray-400 text-sm uppercase tracking-wide mb-2">
-            Pass to
+            Your turn
           </p>
-          <h3 className="text-3xl font-bold text-white mb-6">
+          <h3 className="text-3xl font-bold text-white mb-2">
             {profile.name}
           </h3>
+          <p className="text-gray-400 text-sm mb-6">
+            Swipe through all 10 restaurants
+          </p>
 
           <Button
             onClick={onReady}
             size="lg"
             className="min-w-[160px]"
           >
-            Ready
+            I'm Ready
           </Button>
         </motion.div>
       </motion.div>

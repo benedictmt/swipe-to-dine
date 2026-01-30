@@ -58,7 +58,6 @@ export default function InvitePage() {
   const handleProfileSubmit = (data: {
     name: string;
     phone: string;
-    age: number;
     avatar?: string;
     cuisinePreferences: Partial<Record<CuisineType, number>>;
   }) => {

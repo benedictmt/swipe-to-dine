@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * List of profiles with selection and attendance mode controls
+ * List of profiles with selection, favorites, and attendance mode controls
  */
 
 import { Profile, AttendanceMode } from '@/types';
@@ -15,11 +15,12 @@ interface DinerListProps {
   onToggleSelect: (profileId: string) => void;
   onModeChange: (profileId: string, mode: AttendanceMode) => void;
   onEdit: (profile: Profile) => void;
+  onToggleFavorite: (profileId: string) => void;
 }
 
 const modeOptions = [
   { value: 'remote', label: 'Remote' },
-  { value: 'onDeck', label: 'On-Deck' },
+  { value: 'inPerson', label: 'In Person' },
 ];
 
 export function DinerList({
@@ -29,10 +30,18 @@ export function DinerList({
   onToggleSelect,
   onModeChange,
   onEdit,
+  onToggleFavorite,
 }: DinerListProps) {
   // Filter out the "Just Browsing" profile - it's handled separately
-  const visibleProfiles = profiles.filter((p) => p.name !== 'Just Browsing');
-  const hasOnDeckDiner = selectedIds.some((id) => modesById[id] === 'onDeck');
+  // Sort: favorites first, then by name
+  const visibleProfiles = profiles
+    .filter((p) => p.name !== 'Just Browsing')
+    .sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  const hasInPersonDiner = selectedIds.some((id) => modesById[id] === 'inPerson');
 
   return (
     <div className="space-y-3">
@@ -53,6 +62,7 @@ export function DinerList({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
+                layout
                 className={`
                   p-4 rounded-xl border-2 transition-all
                   ${
@@ -103,6 +113,30 @@ export function DinerList({
                       <h4 className="font-semibold text-gray-900 dark:text-white truncate">
                         {profile.name}
                       </h4>
+                      {/* Favorite star */}
+                      <button
+                        onClick={() => onToggleFavorite(profile.id)}
+                        className="transition-colors"
+                      >
+                        <svg
+                          className={`w-5 h-5 ${
+                            profile.isFavorite
+                              ? 'text-yellow-400 fill-yellow-400'
+                              : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'
+                          }`}
+                          fill={profile.isFavorite ? 'currentColor' : 'none'}
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                          />
+                        </svg>
+                      </button>
+                      {/* Edit button */}
                       <button
                         onClick={() => onEdit(profile)}
                         className="text-gray-400 hover:text-rose-500 transition-colors"
@@ -138,7 +172,7 @@ export function DinerList({
                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                           {mode === 'remote'
                             ? "They'll swipe from their phone"
-                            : "They'll take turns swiping on this phone"}
+                            : "They'll swipe all options, then pass the phone"}
                         </p>
                       </motion.div>
                     )}
@@ -150,9 +184,9 @@ export function DinerList({
         </AnimatePresence>
       )}
 
-      {/* On-Deck info note */}
+      {/* In-Person info note */}
       <AnimatePresence>
-        {hasOnDeckDiner && (
+        {hasInPersonDiner && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -173,8 +207,8 @@ export function DinerList({
               />
             </svg>
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>On-Deck mode:</strong> Selected diners will swipe sequentially
-              on this device during the round. Pass the phone when prompted!
+              <strong>In-Person mode:</strong> Each diner swipes through all restaurants
+              before passing the phone to the next person.
             </p>
           </motion.div>
         )}

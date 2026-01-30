@@ -21,7 +21,7 @@ import { isValidPhone } from '@/utils/helpers';
 
 export default function GroupPage() {
   const router = useRouter();
-  const { profiles, createProfile, updateProfile, getProfileByPhone } = useProfileStore();
+  const { profiles, createProfile, updateProfile, getProfileByPhone, toggleFavorite } = useProfileStore();
   const {
     party,
     addDiner,
@@ -77,7 +77,6 @@ export default function GroupPage() {
   const handleProfileSubmit = (data: {
     name: string;
     phone: string;
-    age: number;
     avatar?: string;
     cuisinePreferences: Partial<Record<CuisineType, number>>;
   }) => {
@@ -119,7 +118,6 @@ export default function GroupPage() {
     const newProfile = createProfile({
       name: `Friend (${friendPhone.slice(-4)})`,
       phone: friendPhone,
-      age: 0,
     });
     addDiner(newProfile.id);
     setShowAddFriendModal(false);
@@ -145,7 +143,6 @@ export default function GroupPage() {
       const newProfile = createProfile({
         name: 'Just Browsing',
         phone: '',
-        age: 0,
       });
       profileId = newProfile.id;
     }
@@ -229,6 +226,7 @@ export default function GroupPage() {
             onToggleSelect={handleToggleSelect}
             onModeChange={handleModeChange}
             onEdit={handleEditProfile}
+            onToggleFavorite={toggleFavorite}
           />
 
           {/* Add buttons */}

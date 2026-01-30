@@ -138,10 +138,10 @@ export interface Profile {
   id: string;
   name: string;
   phone: string;
-  age: number;
   avatar: string; // Base64 image or SVG string
   avatarType: 'generated' | 'uploaded';
   cuisinePreferences: CuisinePreferences;
+  isFavorite: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -160,7 +160,7 @@ export const PREFERENCE_VALUES = [-2, -1, 0, 1, 2];
 // Party / Session Types
 // ============================================================================
 
-export type AttendanceMode = 'remote' | 'onDeck';
+export type AttendanceMode = 'remote' | 'inPerson'; // 'inPerson' = pass-the-phone mode
 
 export type VoteStatus = 'no' | 'maybe' | 'unknown';
 
@@ -191,8 +191,10 @@ export interface PartyState {
   matchedAt: number | null;
   /** Current restaurant being voted on */
   currentRestaurantIndex: number;
-  /** For On-Deck: current diner index in the turn sequence */
-  currentOnDeckDinerIndex: number;
+  /** For In-Person: current diner index (which person is currently swiping all restaurants) */
+  currentInPersonDinerIndex: number;
+  /** For In-Person: track which restaurant index each person started at */
+  inPersonDinerStartIndex: number;
   createdAt: number;
   updatedAt: number;
 }

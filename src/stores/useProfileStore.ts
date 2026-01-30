@@ -23,7 +23,6 @@ interface ProfileState {
   createProfile: (data: {
     name: string;
     phone: string;
-    age: number;
     avatar?: string;
     cuisinePreferences?: CuisinePreferences;
   }) => Profile;
@@ -34,6 +33,8 @@ interface ProfileState {
   getProfileByPhone: (phone: string) => Profile | undefined;
   setCuisinePreference: (profileId: string, cuisine: CuisineType, value: number) => void;
   setAvatar: (profileId: string, avatar: string, type: 'generated' | 'uploaded') => void;
+  toggleFavorite: (profileId: string) => void;
+  getSortedProfiles: () => Profile[];
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -51,10 +52,10 @@ export const useProfileStore = create<ProfileState>()(
           id,
           name: data.name,
           phone: data.phone,
-          age: data.age,
           avatar,
           avatarType: data.avatar ? 'uploaded' : 'generated',
           cuisinePreferences: data.cuisinePreferences || {},
+          isFavorite: false,
           createdAt: now,
           updatedAt: now,
         };
@@ -127,6 +128,29 @@ export const useProfileStore = create<ProfileState>()(
               : profile
           ),
         })),
+
+      toggleFavorite: (profileId) =>
+        set((state) => ({
+          profiles: state.profiles.map((profile) =>
+            profile.id === profileId
+              ? {
+                  ...profile,
+                  isFavorite: !profile.isFavorite,
+                  updatedAt: Date.now(),
+                }
+              : profile
+          ),
+        })),
+
+      getSortedProfiles: () => {
+        const { profiles } = get();
+        // Sort: favorites first, then by name
+        return [...profiles].sort((a, b) => {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+          return a.name.localeCompare(b.name);
+        });
+      },
     }),
     {
       name: 'swipe-to-dine-profiles',

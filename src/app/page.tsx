@@ -61,20 +61,20 @@ export default function FiltersPage() {
     <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-center">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center">
           {hasCustomLogo ? (
-            <div className="relative w-12 h-12">
+            <div className="relative w-20 h-14 overflow-hidden">
               <Image
                 src="/logo.png"
                 alt="Swipe to Dine"
                 fill
-                className="object-contain"
+                className="object-cover scale-150"
                 onError={() => setHasCustomLogo(false)}
                 priority
               />
             </div>
           ) : (
-            <Logo size="md" animate />
+            <Logo size="lg" animate />
           )}
         </div>
       </header>

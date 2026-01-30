@@ -24,7 +24,6 @@ export interface Database {
           id: string;
           name: string;
           phone: string;
-          age: number;
           avatar: string;
           avatar_type: 'generated' | 'uploaded';
           cuisine_preferences: Json;
@@ -35,7 +34,6 @@ export interface Database {
           id?: string;
           name: string;
           phone: string;
-          age: number;
           avatar: string;
           avatar_type?: 'generated' | 'uploaded';
           cuisine_preferences?: Json;
@@ -46,7 +44,6 @@ export interface Database {
           id?: string;
           name?: string;
           phone?: string;
-          age?: number;
           avatar?: string;
           avatar_type?: 'generated' | 'uploaded';
           cuisine_preferences?: Json;
@@ -130,7 +127,7 @@ export interface Database {
     Views: {};
     Functions: {};
     Enums: {
-      attendance_mode: 'remote' | 'onDeck';
+      attendance_mode: 'remote' | 'inPerson';
       vote_status: 'no' | 'maybe';
       avatar_type: 'generated' | 'uploaded';
     };

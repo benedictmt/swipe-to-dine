@@ -15,7 +15,6 @@ interface ProfileFormProps {
   onSubmit: (data: {
     name: string;
     phone: string;
-    age: number;
     avatar?: string;
     cuisinePreferences: Partial<Record<CuisineType, number>>;
   }) => void;
@@ -25,14 +24,12 @@ interface ProfileFormProps {
 export function ProfileForm({ initialProfile, onSubmit, onCancel }: ProfileFormProps) {
   const [name, setName] = useState(initialProfile?.name || '');
   const [phone, setPhone] = useState(initialProfile?.phone || '');
-  const [age, setAge] = useState(initialProfile?.age?.toString() || '');
   const [avatar, setAvatar] = useState(initialProfile?.avatar || '');
   const [cuisinePrefs, setCuisinePrefs] = useState<Partial<Record<CuisineType, number>>>(
     initialProfile?.cuisinePreferences || {}
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPreferences, setShowPreferences] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,12 +63,6 @@ export function ProfileForm({ initialProfile, onSubmit, onCancel }: ProfileFormP
       newErrors.phone = 'Invalid phone number';
     }
 
-    if (!age.trim()) {
-      newErrors.age = 'Age is required';
-    } else if (isNaN(parseInt(age)) || parseInt(age) < 1 || parseInt(age) > 120) {
-      newErrors.age = 'Invalid age';
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -80,7 +71,6 @@ export function ProfileForm({ initialProfile, onSubmit, onCancel }: ProfileFormP
     onSubmit({
       name: name.trim(),
       phone: phone.trim(),
-      age: parseInt(age),
       avatar: avatar || undefined,
       cuisinePreferences: cuisinePrefs,
     });
@@ -145,62 +135,36 @@ export function ProfileForm({ initialProfile, onSubmit, onCancel }: ProfileFormP
         error={errors.phone}
       />
 
-      <Input
-        label="Age"
-        placeholder="Enter your age"
-        type="number"
-        min="1"
-        max="120"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-        error={errors.age}
-      />
-
-      {/* Cuisine preferences */}
+      {/* Cuisine preferences - always visible inline */}
       <div>
-        <button
-          type="button"
-          onClick={() => setShowPreferences(!showPreferences)}
-          className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-rose-500 transition-colors"
-        >
-          <span>Cuisine Preferences</span>
-          <svg
-            className={`w-4 h-4 transition-transform ${showPreferences ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {showPreferences && (
-          <div className="mt-4 space-y-4 max-h-[300px] overflow-y-auto pr-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Rate your preference for each cuisine type
-            </p>
-            {ALL_CUISINES.map((cuisine) => {
-              const value = cuisinePrefs[cuisine] ?? 0;
-              return (
-                <div key={cuisine} className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {CUISINE_LABELS[cuisine]}
-                    </span>
-                    <span className="text-xl">{getPreferenceEmoji(value)}</span>
-                  </div>
-                  <Slider
-                    value={value}
-                    onChange={(v) => setCuisinePreference(cuisine, v)}
-                    min={-2}
-                    max={2}
-                    step={1}
-                  />
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Cuisine Preferences
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Rate your preference for each cuisine type
+        </p>
+        <div className="space-y-4">
+          {ALL_CUISINES.map((cuisine) => {
+            const value = cuisinePrefs[cuisine] ?? 0;
+            return (
+              <div key={cuisine} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {CUISINE_LABELS[cuisine]}
+                  </span>
+                  <span className="text-xl">{getPreferenceEmoji(value)}</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <Slider
+                  value={value}
+                  onChange={(v) => setCuisinePreference(cuisine, v)}
+                  min={-2}
+                  max={2}
+                  step={1}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Actions */}
