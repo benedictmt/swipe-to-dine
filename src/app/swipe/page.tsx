@@ -25,6 +25,9 @@ import { Profile, Restaurant, VoteStatus } from '@/types';
 
 type SwipePhase = 'swiping' | 'onDeckHandoff' | 'noMatch' | 'spinWheel' | 'matched';
 
+// Minimum swipes before showing shortlist option for single diner
+const MIN_SWIPES_FOR_SHORTLIST = 10;
+
 export default function SwipePage() {
   const router = useRouter();
   const { profiles, getProfile } = useProfileStore();
@@ -71,6 +74,12 @@ export default function SwipePage() {
 
   // Check if we need on-deck handoff
   const needsOnDeckHandoff = onDeckDiners.length > 0 && !isOnDeckReady && !!currentRestaurant;
+
+  // Single diner mode detection
+  const isSingleDiner = party?.selectedDiners.length === 1;
+  const swipeCount = party?.currentRestaurantIndex || 0;
+  const canViewShortlist = isSingleDiner && swipeCount >= MIN_SWIPES_FOR_SHORTLIST;
+  const maybeCount = getRestaurantsWithMaybeVotes().length;
 
   // Load restaurants on mount
   useEffect(() => {
@@ -209,6 +218,36 @@ export default function SwipePage() {
 
   // End of deck
   if (!currentRestaurant && phase === 'swiping') {
+    // Single diner end screen with shortlist option
+    if (isSingleDiner && maybeCount > 0) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-8">
+          <Logo size="md" className="mb-8" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+            All Done!
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-center mb-2">
+            You've seen all {restaurants.length} restaurants.
+          </p>
+          <p className="text-rose-500 font-medium text-center mb-8">
+            {maybeCount} {maybeCount === 1 ? 'place' : 'places'} made your shortlist!
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Button onClick={() => router.push('/shortlist')} fullWidth>
+              View My Shortlist
+            </Button>
+            <Button variant="secondary" onClick={handleSpinWheel} fullWidth>
+              Let Fate Decide
+            </Button>
+            <Button variant="secondary" onClick={() => router.push('/')} fullWidth>
+              Start Over
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Multi-diner or no maybes end screen
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-8">
         <Logo size="md" className="mb-8" />
@@ -347,11 +386,20 @@ export default function SwipePage() {
           {(party.currentRestaurantIndex || 0) + 1} of {restaurants.length}
         </div>
 
-        {/* No match yet button */}
-        <div className="mt-4 text-center">
+        {/* Action buttons */}
+        <div className="mt-4 text-center space-y-2">
+          {/* Shortlist button for single diners after 10+ swipes */}
+          {canViewShortlist && maybeCount > 0 && (
+            <button
+              onClick={() => router.push('/shortlist')}
+              className="text-rose-500 text-sm font-medium hover:underline block mx-auto"
+            >
+              View Shortlist ({maybeCount})
+            </button>
+          )}
           <button
             onClick={handleSpinWheel}
-            className="text-rose-500 text-sm font-medium hover:underline"
+            className="text-gray-400 dark:text-gray-500 text-sm hover:underline"
           >
             Can't decide? Let Fate Choose
           </button>

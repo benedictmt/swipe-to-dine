@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { AppWrapper } from '@/components/common/AppWrapper';
 
 /**
  * Root layout for Swipe to Dine
@@ -48,7 +49,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-white dark:bg-gray-950 antialiased">
-        <main className="relative min-h-screen">{children}</main>
+        <AppWrapper>
+          <main className="relative min-h-screen">{children}</main>
+        </AppWrapper>
       </body>
     </html>
   );

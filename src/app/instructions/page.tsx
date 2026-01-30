@@ -7,15 +7,17 @@
  * Purpose: Explain swipe mechanics before starting.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Logo } from '@/components/common/Logo';
 import { usePartyStore } from '@/stores';
 
 export default function InstructionsPage() {
   const router = useRouter();
   const { party } = usePartyStore();
+  const [hasCustomLogo, setHasCustomLogo] = useState(true);
 
   // Redirect if no party
   useEffect(() => {
@@ -51,7 +53,20 @@ export default function InstructionsPage() {
         transition={{ delay: 0.2 }}
         className="mb-12"
       >
-        <Logo size="lg" animate />
+        {hasCustomLogo ? (
+          <div className="relative w-40 h-40">
+            <Image
+              src="/logo.png"
+              alt="Swipe to Dine"
+              fill
+              className="object-contain drop-shadow-lg"
+              onError={() => setHasCustomLogo(false)}
+              priority
+            />
+          </div>
+        ) : (
+          <Logo size="lg" animate />
+        )}
       </motion.div>
 
       {/* Swipe arrows */}
