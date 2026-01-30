@@ -2,39 +2,19 @@
  * Restaurant Service
  *
  * Handles restaurant search, filtering, and ranking.
- *
- * TODO: Replace with real API integration
- *
- * Google Places API integration:
- * 1. Create a Cloud project at console.cloud.google.com
- * 2. Enable Places API
- * 3. Create API key with appropriate restrictions
- * 4. Use Nearby Search: GET /maps/api/place/nearbysearch/json
- *    - location: lat,lng
- *    - radius: meters (1 mile = 1609.34 meters)
- *    - type: restaurant
- *    - minprice/maxprice: 0-4 (maps to $-$$$$)
- *    - keyword: cuisine types
- * 5. Use Place Details for more info
- * 6. Use Place Photos for images
- *
- * Yelp Fusion API alternative:
- * 1. Create app at yelp.com/developers
- * 2. Use Business Search: GET /v3/businesses/search
- *    - location or latitude/longitude
- *    - radius: meters (max 40000)
- *    - categories: cuisine types
- *    - price: 1-4
+ * Uses Google Places API when configured, falls back to mock data.
  */
 
 import { Restaurant, DiningFilters, Profile, CuisineType } from '@/types';
 import { mockRestaurants, getRestaurantById } from '@/data/mockRestaurants';
+import { searchGooglePlaces } from './googlePlacesService';
 
 interface SearchParams {
   filters: DiningFilters;
   userLat?: number;
   userLng?: number;
   profiles?: Profile[]; // For preference scoring
+  useGooglePlaces?: boolean; // Try Google Places API first
 }
 
 interface ScoredRestaurant {
@@ -45,7 +25,35 @@ interface ScoredRestaurant {
 }
 
 /**
- * Search and rank restaurants based on filters and group preferences
+ * Async search that tries Google Places API first, falls back to mock data
+ */
+export async function searchRestaurantsAsync(params: SearchParams): Promise<Restaurant[]> {
+  const { filters, userLat, userLng, profiles = [] } = params;
+
+  // Try Google Places API if we have coordinates
+  if (userLat && userLng) {
+    try {
+      const restaurants = await searchGooglePlaces({
+        lat: userLat,
+        lng: userLng,
+        filters,
+      });
+
+      if (restaurants.length > 0) {
+        // Apply preference scoring and sort
+        return rankRestaurants(restaurants, filters, profiles);
+      }
+    } catch (error) {
+      console.warn('Google Places search failed, using mock data:', error);
+    }
+  }
+
+  // Fall back to mock data
+  return searchRestaurants(params);
+}
+
+/**
+ * Search and rank restaurants based on filters and group preferences (sync/mock data)
  */
 export function searchRestaurants(params: SearchParams): Restaurant[] {
   const { filters, profiles = [] } = params;
@@ -108,6 +116,31 @@ export function searchRestaurants(params: SearchParams): Restaurant[] {
   // Step 3: Sort by total score (descending)
   scored.sort((a, b) => b.totalScore - a.totalScore);
 
+  return scored.map((s) => s.restaurant);
+}
+
+/**
+ * Rank pre-fetched restaurants by filters and preferences
+ */
+function rankRestaurants(
+  restaurants: Restaurant[],
+  filters: DiningFilters,
+  profiles: Profile[]
+): Restaurant[] {
+  const scored: ScoredRestaurant[] = restaurants.map((restaurant) => {
+    const filterScore = calculateFilterScore(restaurant, filters);
+    const preferenceScore = calculatePreferenceScore(restaurant, profiles);
+    const totalScore = filterScore + preferenceScore;
+
+    return {
+      restaurant,
+      filterScore,
+      preferenceScore,
+      totalScore,
+    };
+  });
+
+  scored.sort((a, b) => b.totalScore - a.totalScore);
   return scored.map((s) => s.restaurant);
 }
 

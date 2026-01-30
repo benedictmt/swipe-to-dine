@@ -19,8 +19,8 @@ import { OnDeckOverlay } from '@/components/swipe/OnDeckOverlay';
 import { WheelSpinner } from '@/components/swipe/WheelSpinner';
 import { StarBurst } from '@/components/common/StarBurst';
 import { Confetti } from '@/components/common/Confetti';
-import { usePartyStore, useProfileStore, useFilterStore } from '@/stores';
-import { searchRestaurants } from '@/services/restaurantService';
+import { usePartyStore, useProfileStore, useFilterStore, useLocationStore } from '@/stores';
+import { searchRestaurantsAsync, searchRestaurants } from '@/services/restaurantService';
 import { Profile, Restaurant, VoteStatus } from '@/types';
 
 type SwipePhase = 'swiping' | 'onDeckHandoff' | 'noMatch' | 'spinWheel' | 'matched';
@@ -32,6 +32,7 @@ export default function SwipePage() {
   const router = useRouter();
   const { profiles, getProfile } = useProfileStore();
   const { filters } = useFilterStore();
+  const { location } = useLocationStore();
   const {
     party,
     restaurants,
@@ -56,6 +57,7 @@ export default function SwipePage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isOnDeckReady, setIsOnDeckReady] = useState(false);
   const [currentCardKey, setCurrentCardKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get current restaurant
   const currentRestaurant = getCurrentRestaurant();
@@ -88,20 +90,41 @@ export default function SwipePage() {
       return;
     }
 
-    if (restaurants.length === 0) {
-      const results = searchRestaurants({
-        filters,
-        profiles: selectedProfiles,
-      });
-      setRestaurants(results);
+    if (restaurants.length === 0 && !isLoading) {
+      setIsLoading(true);
 
-      // Show star burst on first card
-      if (results.length > 0) {
-        setShowStarBurst(true);
-        setTimeout(() => setShowStarBurst(false), 1000);
-      }
+      // Try async search with Google Places if location available
+      const loadRestaurants = async () => {
+        try {
+          const results = await searchRestaurantsAsync({
+            filters,
+            profiles: selectedProfiles,
+            userLat: location?.lat,
+            userLng: location?.lng,
+          });
+          setRestaurants(results);
+
+          // Show star burst on first card
+          if (results.length > 0) {
+            setShowStarBurst(true);
+            setTimeout(() => setShowStarBurst(false), 1000);
+          }
+        } catch (error) {
+          console.error('Failed to load restaurants:', error);
+          // Fall back to sync mock data search
+          const results = searchRestaurants({
+            filters,
+            profiles: selectedProfiles,
+          });
+          setRestaurants(results);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadRestaurants();
     }
-  }, [party, router]);
+  }, [party, router, isLoading]);
 
   // Get votes for current restaurant
   const currentVotes = currentRestaurant
@@ -198,6 +221,19 @@ export default function SwipePage() {
 
   if (!party) {
     return null;
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 dark:from-gray-950 dark:to-gray-900 flex flex-col items-center justify-center px-8">
+        <Logo size="md" className="mb-8" />
+        <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-500 dark:text-gray-400 text-center">
+          Finding restaurants near you...
+        </p>
+      </div>
+    );
   }
 
   // No restaurants found

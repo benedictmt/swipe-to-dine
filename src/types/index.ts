@@ -56,7 +56,8 @@ export type CuisineType =
   | 'sushi'
   | 'vegan'
   | 'breakfast'
-  | 'dessert';
+  | 'dessert'
+  | 'bar';
 
 export const ALL_CUISINES: CuisineType[] = [
   'american',
@@ -79,6 +80,7 @@ export const ALL_CUISINES: CuisineType[] = [
   'vegan',
   'breakfast',
   'dessert',
+  'bar',
 ];
 
 export const CUISINE_LABELS: Record<CuisineType, string> = {
@@ -102,6 +104,7 @@ export const CUISINE_LABELS: Record<CuisineType, string> = {
   vegan: 'Vegan',
   breakfast: 'Breakfast',
   dessert: 'Dessert',
+  bar: 'Happy Hour/Bar',
 };
 
 // ============================================================================

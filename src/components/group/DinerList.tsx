@@ -30,18 +30,20 @@ export function DinerList({
   onModeChange,
   onEdit,
 }: DinerListProps) {
+  // Filter out the "Just Browsing" profile - it's handled separately
+  const visibleProfiles = profiles.filter((p) => p.name !== 'Just Browsing');
   const hasOnDeckDiner = selectedIds.some((id) => modesById[id] === 'onDeck');
 
   return (
     <div className="space-y-3">
-      {profiles.length === 0 ? (
+      {visibleProfiles.length === 0 ? (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <p>No profiles yet.</p>
           <p className="text-sm">Create one to get started!</p>
         </div>
       ) : (
         <AnimatePresence>
-          {profiles.map((profile) => {
+          {visibleProfiles.map((profile) => {
             const isSelected = selectedIds.includes(profile.id);
             const mode = modesById[profile.id] || 'remote';
 
