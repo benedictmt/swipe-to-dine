@@ -114,11 +114,11 @@ export default function FiltersPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {location.source === 'geolocation' ? 'Current Location' : location.address}
+                      {location.address || 'Current Location'}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {location.source === 'geolocation'
-                        ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+                        ? 'Using your location'
                         : 'Manual entry'}
                     </p>
                   </div>

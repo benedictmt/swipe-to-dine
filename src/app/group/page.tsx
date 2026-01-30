@@ -134,6 +134,30 @@ export default function GroupPage() {
     router.push('/instructions');
   };
 
+  const handleBrowseOnly = () => {
+    // Check if a "Browser" profile exists, otherwise create one
+    const browserProfile = profiles.find((p) => p.name === 'Just Browsing');
+    let profileId: string;
+
+    if (browserProfile) {
+      profileId = browserProfile.id;
+    } else {
+      const newProfile = createProfile({
+        name: 'Just Browsing',
+        phone: '',
+        age: 0,
+      });
+      profileId = newProfile.id;
+    }
+
+    // Clear existing selections and add only the browser profile
+    party?.selectedDiners.forEach((d) => removeDiner(d.profileId));
+    addDiner(profileId);
+
+    // Go directly to swipe
+    router.push('/instructions');
+  };
+
   if (!party) {
     return null;
   }
@@ -268,7 +292,7 @@ export default function GroupPage() {
 
       {/* Fixed CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 safe-bottom">
-        <div className="max-w-lg mx-auto px-4 py-4">
+        <div className="max-w-lg mx-auto px-4 py-4 space-y-3">
           <Button
             onClick={handleNext}
             fullWidth
@@ -277,6 +301,12 @@ export default function GroupPage() {
           >
             Swipe to Dine
           </Button>
+          <button
+            onClick={handleBrowseOnly}
+            className="w-full py-2 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+          >
+            Just browsing? Build a list to review later
+          </button>
         </div>
       </div>
 
