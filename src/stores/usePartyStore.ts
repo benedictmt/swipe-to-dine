@@ -108,7 +108,8 @@ export const usePartyStore = create<PartyStoreState>()(
           updatedAt: now,
         };
 
-        set({ party: newParty });
+        // Clear old restaurants so new ones are fetched based on new filters
+        set({ party: newParty, restaurants: [] });
 
         // Also save to localStorage with inviteId key for cross-device access
         if (typeof window !== 'undefined') {
