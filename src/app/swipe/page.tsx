@@ -105,11 +105,6 @@ export default function SwipePage() {
   const currentDinerSwipeCount = swipeCount - currentDinerStartIndex;
   const currentDinerFinishedBatch = currentDinerSwipeCount >= RESTAURANTS_PER_ROUND;
 
-  // End of round when ALL in-person diners have finished their batches
-  const allDinersFinishedRound = isMultiDinerInPerson &&
-    (party?.currentInPersonDinerIndex || 0) >= inPersonDiners.length - 1 &&
-    currentDinerFinishedBatch;
-
   const currentRound = Math.floor(roundStartIndex / (RESTAURANTS_PER_ROUND * inPersonDiners.length)) + 1;
   const remainingInDeck = restaurants.length - swipeCount;
 
@@ -160,12 +155,8 @@ export default function SwipePage() {
     }
   }, [party, router, isLoading]);
 
-  // Check for end of round in multi-diner mode (when all diners finish their batches)
-  useEffect(() => {
-    if (allDinersFinishedRound && phase === 'swiping') {
-      setPhase('roundEnd');
-    }
-  }, [allDinersFinishedRound, phase]);
+  // Note: Round completion is handled in handleVote when advanceToNextInPersonDiner returns true
+  // This avoids race conditions with intermediate state updates
 
   // Get votes for current restaurant
   const currentVotes = currentRestaurant
