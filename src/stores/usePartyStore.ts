@@ -364,10 +364,12 @@ export const usePartyStore = create<PartyStoreState>()(
         set((s) => {
           if (!s.party) return s;
 
+          // Reset currentRestaurantIndex to round start so next diner sees same restaurants
+          // Keep inPersonDinerStartIndex unchanged (it marks the round start)
           const updatedParty = {
             ...s.party,
             currentInPersonDinerIndex: nextIndex,
-            inPersonDinerStartIndex: s.party.currentRestaurantIndex,
+            currentRestaurantIndex: s.party.inPersonDinerStartIndex,
             updatedAt: Date.now(),
           };
 
